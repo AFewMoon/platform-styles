@@ -1,0 +1,489 @@
+.scene-svg {
+  --scene-cyan: #56ccf2;
+  --scene-amber: #f6c453;
+  --scene-mint: #55d6be;
+  --scene-rose: #fb7185;
+  --scene-neutral: #8f9eb2;
+  --scene-text: #f3f6fa;
+  --scene-muted: #aab6c8;
+  --scene-dim: #718198;
+  --scene-line: #465b74;
+  --scene-bg: #0e1728;
+
+  width: 100%;
+  height: auto;
+  max-height: 540px;
+  font-family: var(--font-sans);
+  text-rendering: geometricPrecision;
+  user-select: none;
+}
+
+.scene-svg text {
+  paint-order: stroke;
+  stroke: rgba(11, 18, 32, 0.65);
+  stroke-width: 2px;
+  stroke-linejoin: round;
+}
+
+.scene-svg .scene-bg {
+  fill: var(--scene-bg);
+}
+
+.scene-svg .scene-grid {
+  fill: var(--scene-grid-fill, none);
+}
+
+.scene-svg .scene-frame {
+  fill: none;
+  stroke: rgba(86, 204, 242, 0.18);
+  stroke-width: 1;
+}
+
+.scene-svg .scene-corner {
+  fill: none;
+  stroke: rgba(86, 204, 242, 0.5);
+  stroke-width: 1.5;
+}
+
+.scene-svg .coordinate-text,
+.scene-svg .micro-label {
+  fill: var(--scene-dim);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.scene-svg .micro-label {
+  font-size: 9px;
+}
+
+.scene-svg .axis-line {
+  fill: none;
+  stroke: rgba(170, 182, 200, 0.12);
+  stroke-width: 1;
+}
+
+.scene-svg .track {
+  fill: none;
+  stroke: var(--scene-line);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.scene-svg .track-thin {
+  fill: none;
+  stroke: var(--scene-line);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.scene-svg .track[data-tone="cyan"] { stroke: rgba(86, 204, 242, 0.7); }
+.scene-svg .track[data-tone="amber"] { stroke: rgba(246, 196, 83, 0.75); }
+.scene-svg .track[data-tone="mint"] { stroke: rgba(85, 214, 190, 0.72); }
+.scene-svg .track[data-tone="rose"] { stroke: rgba(251, 113, 133, 0.72); }
+.scene-svg .track.is-siding {
+  stroke-dasharray: 10 7;
+  stroke-width: 2.5;
+}
+
+.scene-svg .sleepers {
+  fill: none;
+  stroke: rgba(170, 182, 200, 0.22);
+  stroke-width: 1;
+  stroke-dasharray: 2 13;
+}
+
+.scene-svg .motion-route {
+  fill: none;
+  stroke: none;
+  pointer-events: none;
+}
+
+.scene-svg .platform {
+  fill: rgba(246, 196, 83, 0.13);
+  stroke: var(--scene-amber);
+  stroke-width: 1.4;
+  rx: 4;
+}
+
+.scene-svg .platform.is-neutral {
+  fill: rgba(143, 158, 178, 0.11);
+  stroke: var(--scene-neutral);
+}
+
+.scene-svg .platform[data-tone="mint"] {
+  fill: rgba(85, 214, 190, 0.13);
+  stroke: var(--scene-mint);
+}
+
+.scene-svg .platform[data-tone="rose"] {
+  fill: rgba(251, 113, 133, 0.13);
+  stroke: var(--scene-rose);
+}
+
+.scene-svg .platform[data-tone="cyan"] {
+  fill: rgba(86, 204, 242, 0.13);
+  stroke: var(--scene-cyan);
+}
+
+.scene-svg .platform-hatch[data-tone="mint"],
+.scene-svg .platform-hatch[data-tone="rose"],
+.scene-svg .platform-hatch[data-tone="cyan"] {
+  opacity: 0.16;
+}
+
+.scene-svg .platform-label[data-tone="mint"] { fill: var(--scene-mint); }
+.scene-svg .platform-label[data-tone="rose"] { fill: var(--scene-rose); }
+.scene-svg .platform-label[data-tone="cyan"] { fill: var(--scene-cyan); }
+
+.scene-svg .platform-hatch {
+  fill: var(--scene-hatch-fill, none);
+  opacity: 0.42;
+}
+
+.scene-svg .platform-label,
+.scene-svg .object-label {
+  fill: var(--scene-amber);
+  font-size: 12px;
+  font-weight: 650;
+  text-anchor: middle;
+}
+
+.scene-svg .object-label {
+  fill: var(--scene-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.scene-svg .object-label[data-align="start"] { text-anchor: start; }
+.scene-svg .object-label[data-align="end"] { text-anchor: end; }
+.scene-svg .object-label[data-tone="cyan"] { fill: var(--scene-cyan); }
+.scene-svg .object-label[data-tone="amber"] { fill: var(--scene-amber); }
+.scene-svg .object-label[data-tone="mint"] { fill: var(--scene-mint); }
+.scene-svg .object-label[data-tone="rose"] { fill: var(--scene-rose); }
+
+.scene-svg .building {
+  fill: rgba(23, 36, 58, 0.88);
+  stroke: rgba(170, 182, 200, 0.35);
+  stroke-width: 1.2;
+  rx: 5;
+}
+
+.scene-svg .building-label {
+  fill: var(--scene-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.scene-svg .zone {
+  fill: rgba(143, 158, 178, 0.06);
+  stroke: rgba(143, 158, 178, 0.42);
+  stroke-width: 1.2;
+  stroke-dasharray: 6 5;
+  rx: 7;
+  transition: fill 180ms var(--ease-default), stroke 180ms var(--ease-default), opacity 180ms var(--ease-default);
+}
+
+.scene-svg .zone.is-clear {
+  fill: rgba(85, 214, 190, 0.05);
+  stroke: rgba(85, 214, 190, 0.55);
+}
+
+.scene-svg .zone.is-occupied {
+  fill: rgba(251, 113, 133, 0.14);
+  stroke: var(--scene-rose);
+  stroke-dasharray: none;
+}
+
+.scene-svg .zone.is-protected {
+  fill: rgba(246, 196, 83, 0.12);
+  stroke: var(--scene-amber);
+  stroke-dasharray: 10 5;
+}
+
+.scene-svg .zone.is-active {
+  fill: rgba(86, 204, 242, 0.12);
+  stroke: var(--scene-cyan);
+  stroke-dasharray: none;
+}
+
+.scene-svg .zone-label {
+  fill: var(--scene-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.scene-svg .zone.is-occupied .zone-label { fill: #ffc4ce; }
+.scene-svg .zone.is-protected .zone-label { fill: #ffe4a3; }
+.scene-svg .zone.is-active .zone-label { fill: #bcecff; }
+
+.scene-svg .boundary {
+  fill: none;
+  stroke: rgba(246, 196, 83, 0.75);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 5;
+}
+
+.scene-svg .boundary-label {
+  fill: var(--scene-amber);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-anchor: middle;
+}
+
+.scene-svg .signal-pole {
+  fill: none;
+  stroke: var(--scene-neutral);
+  stroke-width: 2;
+}
+
+.scene-svg .signal-lamp {
+  fill: var(--scene-neutral);
+  stroke: var(--scene-bg);
+  stroke-width: 2;
+  transition: fill 180ms var(--ease-default), filter 180ms var(--ease-default);
+}
+
+.scene-svg .signal.is-stop .signal-lamp { fill: var(--scene-rose); filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.8)); }
+.scene-svg .signal.is-caution .signal-lamp { fill: var(--scene-amber); filter: drop-shadow(0 0 6px rgba(246, 196, 83, 0.75)); }
+.scene-svg .signal.is-clear .signal-lamp { fill: var(--scene-mint); filter: drop-shadow(0 0 6px rgba(85, 214, 190, 0.75)); }
+.scene-svg .signal.is-active .signal-lamp { fill: var(--scene-cyan); filter: drop-shadow(0 0 7px rgba(86, 204, 242, 0.8)); }
+
+.scene-svg .signal-label {
+  fill: var(--scene-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.scene-svg .switch-node {
+  fill: var(--scene-bg);
+  stroke: var(--scene-mint);
+  stroke-width: 2;
+}
+
+.scene-svg .switch-label {
+  fill: var(--scene-mint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.scene-svg .train {
+  will-change: transform;
+  filter: drop-shadow(0 6px 9px rgba(0, 0, 0, 0.38));
+}
+
+.scene-svg .train-body {
+  fill: #d9f4ff;
+  stroke: var(--scene-cyan);
+  stroke-width: 1.3;
+}
+
+.scene-svg .train[data-tone="amber"] .train-body { fill: #fff2cf; stroke: var(--scene-amber); }
+.scene-svg .train[data-tone="mint"] .train-body { fill: #d6fff4; stroke: var(--scene-mint); }
+.scene-svg .train[data-tone="rose"] .train-body { fill: #ffe1e6; stroke: var(--scene-rose); }
+.scene-svg .train[data-tone="neutral"] .train-body { fill: #dbe3ed; stroke: var(--scene-neutral); }
+
+.scene-svg .train-window {
+  fill: none;
+  stroke: rgba(11, 18, 32, 0.45);
+  stroke-width: 1;
+  stroke-dasharray: 10 6;
+}
+
+.scene-svg .train-wheel {
+  fill: rgba(11, 18, 32, 0.6);
+}
+
+.scene-svg .train-label {
+  fill: #102a3b;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+  stroke: none;
+}
+
+.scene-svg .train-direction {
+  fill: none;
+  stroke: rgba(11, 18, 32, 0.75);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.scene-svg .wagon {
+  will-change: transform;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+}
+
+.scene-svg .wagon-body {
+  fill: rgba(246, 196, 83, 0.9);
+  stroke: #ffe6a7;
+  stroke-width: 1;
+  rx: 3;
+}
+
+.scene-svg .wagon[data-tone="cyan"] .wagon-body { fill: rgba(86, 204, 242, 0.85); stroke: #c9f0ff; }
+.scene-svg .wagon[data-tone="mint"] .wagon-body { fill: rgba(85, 214, 190, 0.85); stroke: #cafff5; }
+.scene-svg .wagon[data-tone="rose"] .wagon-body { fill: rgba(251, 113, 133, 0.85); stroke: #ffd3dc; }
+
+.scene-svg .wagon-label {
+  fill: #102a3b;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  text-anchor: middle;
+  stroke: none;
+}
+
+.scene-svg .passenger {
+  will-change: transform;
+}
+
+.scene-svg .passenger-body {
+  fill: var(--scene-cyan);
+  stroke: var(--scene-bg);
+  stroke-width: 1.5;
+}
+
+.scene-svg .passenger[data-tone="amber"] .passenger-body { fill: var(--scene-amber); }
+.scene-svg .passenger[data-tone="mint"] .passenger-body { fill: var(--scene-mint); }
+.scene-svg .passenger[data-tone="rose"] .passenger-body { fill: var(--scene-rose); }
+
+.scene-svg .passenger-label {
+  fill: var(--scene-muted);
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+
+.scene-svg .flow {
+  fill: none;
+  stroke: var(--scene-cyan);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 8 7;
+  marker-end: var(--scene-arrow-cyan, none);
+  animation: sceneFlowDash 1s linear infinite;
+}
+
+.scene-svg .flow[data-tone="amber"] { stroke: var(--scene-amber); marker-end: var(--scene-arrow-amber, none); }
+.scene-svg .flow[data-tone="mint"] { stroke: var(--scene-mint); marker-end: var(--scene-arrow-mint, none); }
+.scene-svg .flow[data-tone="rose"] { stroke: var(--scene-rose); marker-end: var(--scene-arrow-rose, none); }
+
+@keyframes sceneFlowDash {
+  to { stroke-dashoffset: -30px; }
+}
+
+.scene-svg .arrow-line {
+  fill: none;
+  stroke: var(--scene-muted);
+  stroke-width: 1.5;
+  marker-end: var(--scene-arrow-neutral, none);
+}
+
+.scene-svg .arrow-line[data-tone="cyan"] { stroke: var(--scene-cyan); marker-end: var(--scene-arrow-cyan, none); }
+.scene-svg .arrow-line[data-tone="amber"] { stroke: var(--scene-amber); marker-end: var(--scene-arrow-amber, none); }
+
+.scene-svg .callout {
+  opacity: 0;
+  transition: opacity 200ms var(--ease-default);
+}
+
+.scene-svg .callout.is-visible {
+  opacity: 1;
+}
+
+.scene-svg .callout-box {
+  fill: rgba(11, 18, 32, 0.94);
+  stroke: var(--scene-cyan);
+  stroke-width: 1;
+  rx: 6;
+}
+
+.scene-svg .callout[data-tone="amber"] .callout-box { stroke: var(--scene-amber); }
+.scene-svg .callout[data-tone="mint"] .callout-box { stroke: var(--scene-mint); }
+.scene-svg .callout[data-tone="rose"] .callout-box { stroke: var(--scene-rose); }
+
+.scene-svg .callout-text {
+  fill: var(--scene-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.scene-svg .callout-subtext {
+  fill: var(--scene-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.scene-svg .callout-leader {
+  fill: none;
+  stroke: rgba(86, 204, 242, 0.75);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.scene-svg .profile-line {
+  fill: none;
+  stroke: var(--scene-amber);
+  stroke-width: 2.5;
+}
+
+.scene-svg .profile-fill {
+  fill: rgba(246, 196, 83, 0.08);
+  stroke: none;
+}
+
+.scene-svg .hump-label {
+  fill: var(--scene-amber);
+  font-size: 11px;
+  font-weight: 650;
+  text-anchor: middle;
+}
+
+.scene-svg .dynamic-text {
+  fill: var(--scene-text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.scene-svg .status-chip {
+  fill: rgba(11, 18, 32, 0.9);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  rx: 11;
+}
+
+.scene-svg .status-chip-text {
+  fill: var(--scene-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 680px) {
+  .scene-svg .platform-label,
+  .scene-svg .object-label,
+  .scene-svg .building-label {
+    font-size: 13px;
+  }
+
+  .scene-svg .micro-label,
+  .scene-svg .coordinate-text,
+  .scene-svg .zone-label,
+  .scene-svg .signal-label,
+  .scene-svg .boundary-label {
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-svg .flow {
+    animation: none;
+  }
+}

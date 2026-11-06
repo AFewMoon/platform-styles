@@ -1,0 +1,16 @@
+{
+  "name": "platform-styles",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "铁路运行原理动画图册，原创 SVG 与原生 ES Modules 静态网站。",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test tests/animation-controller.test.js tests/scenarios.test.js"
+  },
+  "devDependencies": {
+    "vite": "8.3.6"
+  }
+}
