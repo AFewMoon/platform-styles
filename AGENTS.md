@@ -144,6 +144,11 @@ document.documentElement.scrollWidth - window.innerWidth === 0
 - Actions 使用 Node.js 22 和 `npm ci`。
 - Pages 来源选择 **GitHub Actions**，不要选择分支目录模式。
 - 构建目录固定为 `dist`。
+- 工作流固定运行在 `ubuntu-24.04`，避免 `ubuntu-latest` 迁移导致环境漂移。
+- 当前使用 Node 24 运行时 Actions：`checkout@v5`、`setup-node@v5`、`configure-pages@v6`、`upload-pages-artifact@v5`、`deploy-pages@v5`。
+- `configure-pages` 返回 `Get Pages site failed` / `HttpError: Not Found` 时，优先检查仓库是否已创建 Pages 站点，以及来源是否为 GitHub Actions，而不是先怀疑构建产物。
+- `enablement: true` 需要非默认 `GITHUB_TOKEN` 的 PAT 或 GitHub App 权限。本项目不为此引入长期凭据，采用仓库管理员手动启用 Pages 的最小权限路径。
+- Actions 的 Node.js 运行时版本与项目 `node-version` 是两个概念：前者由 Action 主版本决定，后者由 `setup-node` 决定。
 
 ### 9. 无头浏览器验证优先使用系统 Edge
 

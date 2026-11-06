@@ -187,13 +187,41 @@ npm audit --audit-level=moderate
 
 `.github/workflows/deploy.yml` 在推送到 `main` 或手动触发时执行：
 
-1. 安装依赖；
-2. 运行测试；
-3. 构建 `dist/`；
-4. 上传 GitHub Pages artifact；
-5. 部署 Pages。
+1. 使用 `actions/checkout@v5` 检出代码；
+2. 使用 `actions/setup-node@v5`（Node.js 22）安装锁定依赖；
+3. 运行测试并构建 `dist/`；
+4. 由 `actions/configure-pages@v6` 读取 Pages 配置；
+5. 使用 `actions/upload-pages-artifact@v5` 上传 artifact；
+6. 使用 `actions/deploy-pages@v5` 发布站点。
 
-首次发布前确认仓库 **Settings → Pages** 的构建来源为 **GitHub Actions**。Vite 使用相对基路径，站点可在 `/<repo>/` 子路径下工作。
+工作流固定运行在 `ubuntu-24.04`，并保留最小权限：
+
+```yaml
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+```
+
+### 首次启用 Pages
+
+默认 `GITHUB_TOKEN` 不能创建 Pages 站点，`actions/configure-pages` 也不会自动启用它。首次发布前必须由仓库管理员完成一次性设置：
+
+1. 打开 <https://github.com/AFewMoon/platform-styles/settings/pages>；
+2. 在 **Build and deployment** 中将 **Source** 设为 **GitHub Actions**；
+3. 返回 Actions，重新运行 `Deploy GitHub Pages` 工作流。
+
+Vite 使用相对基路径，站点可在 `/<repo>/` 子路径下工作。
+
+### 部署故障排查
+
+| 现象 | 原因 | 处理 |
+| --- | --- | --- |
+| `Get Pages site failed` / `HttpError: Not Found` | 仓库尚未创建 Pages 站点，或构建来源不是 GitHub Actions | 按“首次启用 Pages”完成设置后重跑工作流。 |
+| `enablement` 提示权限不足 | 自动启用需要非 `GITHUB_TOKEN` 的 PAT 或 GitHub App 权限 | 不推荐为此新增长期凭据；直接手动启用 Pages。 |
+| Node.js 20 弃用告警 | 使用了旧版 Actions | 当前工作流已升级到 Node 24 运行时版本。 |
+| `ubuntu-latest` 迁移提示 | 标签未来会切换到 Ubuntu 26 | 已固定为 `ubuntu-24.04`。 |
+| 站点 404 但工作流成功 | 部署尚未传播完成，或 Pages URL 尚未生效 | 等待部署完成后刷新 Pages 地址，并确认 environment 为 `github-pages`。 |
 
 ## 验证基线
 
