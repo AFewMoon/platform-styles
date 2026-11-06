@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "铁路运行原理动画图册，原创 SVG 与原生 ES Modules 静态网站。",
+  "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
