@@ -260,9 +260,23 @@
   font-size: 9px;
 }
 
+.scene-svg .switch-link {
+  fill: none;
+  stroke: var(--scene-mint);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .scene-svg .switch-node {
   fill: var(--scene-bg);
   stroke: var(--scene-mint);
+  stroke-width: 2;
+}
+
+.scene-svg .switch-halo {
+  fill: none;
+  stroke: rgba(85, 214, 190, 0.28);
   stroke-width: 2;
 }
 
@@ -270,6 +284,24 @@
   fill: var(--scene-mint);
   font-family: var(--font-mono);
   font-size: 9px;
+}
+
+.scene-svg .switch-link[data-tone="amber"] {
+  stroke: var(--scene-amber);
+  filter: drop-shadow(0 0 4px rgba(246, 196, 83, 0.55));
+}
+
+.scene-svg .switch-node[data-tone="amber"] {
+  stroke: var(--scene-amber);
+  filter: drop-shadow(0 0 5px rgba(246, 196, 83, 0.65));
+}
+
+.scene-svg .switch-halo[data-tone="amber"] {
+  stroke: rgba(246, 196, 83, 0.38);
+}
+
+.scene-svg .switch-label[data-tone="amber"] {
+  fill: var(--scene-amber);
 }
 
 .scene-svg .train {

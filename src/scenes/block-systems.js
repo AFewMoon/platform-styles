@@ -1,3 +1,5 @@
+import { sampleFrames } from '../core/svg-primitives.js';
+
 const VIEW = [0, 0, 960, 440];
 const DURATION = 14000;
 
@@ -226,6 +228,107 @@ const passingLoop = {
   }),
 };
 
+const FB_ROUTE_START = -100;
+const FB_ROUTE_LENGTH = 1160;
+const FB_HALF_TRAIN = 52;
+const FB_ZONES = [
+  { id: 'fb-b1', label: 'B1', start: 160, end: 315 },
+  { id: 'fb-b2', label: 'B2', start: 315, end: 470 },
+  { id: 'fb-b3', label: 'B3', start: 470, end: 625 },
+  { id: 'fb-b4', label: 'B4', start: 625, end: 780 },
+  { id: 'fb-b5', label: 'B5', start: 780, end: 935 },
+];
+const FB_SIGNALS = FB_ZONES.map((zone, index) => ({
+  ...zone,
+  id: `fb-s${index + 1}`,
+  label: `S${index + 1}`,
+}));
+const FB_A_X_FRAMES = [
+  [0, -100],
+  [1000, 0],
+  [2500, 108],
+  [4500, 367],
+  [6500, 575],
+  [8500, 782],
+  [10500, 990],
+  [DURATION, 990],
+];
+const FB_B_X_FRAMES = [
+  [0, -100],
+  [2000, 70],
+  [5000, 70],
+  [6200, 108],
+  [8000, 367],
+  [10000, 575],
+  [12000, 782],
+  [DURATION, 990],
+];
+
+function fbProgress(frames) {
+  return frames.map(([time, x]) => [time, (x - FB_ROUTE_START) / FB_ROUTE_LENGTH]);
+}
+
+function buildFixedBlockStates(aFrames, bFrames) {
+  const trains = [
+    { name: 'A', frames: aFrames },
+    { name: 'B', frames: bFrames },
+  ];
+  const zoneStates = FB_ZONES.map((zone) => ({
+    id: zone.id,
+    states: [{ time: 0, state: 'clear', text: `${zone.label} · 空闲` }],
+  }));
+  const signalStates = FB_SIGNALS.map((signal) => ({
+    id: signal.id,
+    states: [{ time: 0, state: 'clear', text: `${signal.label} 开放` }],
+  }));
+  const lastZoneKeys = FB_ZONES.map((zone) => `clear|${zone.label} · 空闲`);
+  const lastSignalKeys = FB_SIGNALS.map((signal) => `clear|${signal.label} 开放`);
+
+  for (let time = 50; time <= DURATION; time += 50) {
+    const occupants = FB_ZONES.map((zone) => trains
+      .filter((train) => {
+        const center = FB_ROUTE_START + FB_ROUTE_LENGTH * sampleFrames(train.frames, time, 'linear');
+        return center + FB_HALF_TRAIN > zone.start && center - FB_HALF_TRAIN < zone.end;
+      })
+      .map((train) => train.name)
+      .join('+'));
+
+    occupants.forEach((occupant, index) => {
+      const zone = FB_ZONES[index];
+      const state = occupant ? 'occupied' : 'clear';
+      const text = occupant ? `${zone.label} · ${occupant} 车占用` : `${zone.label} · 空闲`;
+      const key = `${state}|${text}`;
+      if (key !== lastZoneKeys[index]) {
+        zoneStates[index].states.push({ time, state, text });
+        lastZoneKeys[index] = key;
+      }
+
+      const signal = FB_SIGNALS[index];
+      const nextOccupant = occupants[index + 1];
+      let signalState = 'clear';
+      let signalText = `${signal.label} 开放`;
+      if (occupant) {
+        signalState = 'stop';
+        signalText = `${signal.label} 停车 · ${zone.label} 占用`;
+      } else if (nextOccupant) {
+        signalState = 'caution';
+        signalText = `${signal.label} 注意 · ${FB_ZONES[index + 1].label} 占用`;
+      }
+      const signalKey = `${signalState}|${signalText}`;
+      if (signalKey !== lastSignalKeys[index]) {
+        signalStates[index].states.push({ time, state: signalState, text: signalText });
+        lastSignalKeys[index] = signalKey;
+      }
+    });
+  }
+
+  return { zoneStates, signalStates };
+}
+
+const FB_A_FRAMES = fbProgress(FB_A_X_FRAMES);
+const FB_B_FRAMES = fbProgress(FB_B_X_FRAMES);
+const FB_TIMELINE = buildFixedBlockStates(FB_A_FRAMES, FB_B_FRAMES);
+
 const fixedBlock = {
   id: 'fixed-block',
   short: '固定闭塞',
@@ -233,12 +336,12 @@ const fixedBlock = {
   summary: '线路被预先划成若干固定闭塞分区。只要列车占用某分区，后续列车就必须依据信号显示，在该分区之前保持规定的空闲分区数量。',
   duration: DURATION,
   phases: [
-    phase(0, '分区边界固定', 'B1—B4 的边界在建设时确定，不随列车位置移动。'),
-    phase(1000, '前车占用 B1', 'A 车进入 B1，整个分区显示占用，后方信号降级。'),
-    phase(3500, '前车逐区段前进', 'A 车驶入 B2；B1 出清后，后车才可能逐步向前跟进。'),
-    phase(6500, '后车保持间隔', 'B 车依据固定边界上的信号显示运行，安全间隔以“整个分区”为粒度。'),
-    phase(9500, '分区依次出清', 'A 车远离后，B1—B3 依次恢复空闲，但边界位置始终不变。'),
-    phase(12000, '通过能力受限', '分区越长，列车间最小间隔通常越大；追踪能力受到固定划分约束。'),
+    phase(0, '五个固定分区', 'B1—B5 的边界在建设时确定；信号与分区占用由同一组列车位置事件驱动。'),
+    phase(2500, 'A 车进入 B1', 'A 车车头越过 B1 起点，S1 立即转为停车，B1 显示占用。'),
+    phase(4500, 'A 车出清 B1', 'A 车车尾离开 B1 后，B1 与 S1 同步恢复，B 车仍在入口外等待。'),
+    phase(6200, 'B 车进入 B1', 'B 车获得许可后进入 B1；若 B2 仍有前车，S1 显示注意。'),
+    phase(8500, 'A 车进入后段', 'A 车连续占用 B4/B5，后方信号按固定分区逐级降级。'),
+    phase(11000, '分区依次出清', 'A 车离开后 B1—B5 依次恢复；B 车保持整分区间隔继续追踪。'),
   ],
   legends: legends([{ label: '固定分区边界', tone: 'amber', shape: 'dash' }]),
   notes: [
@@ -248,77 +351,44 @@ const fixedBlock = {
   ],
   spec: blockSpec({
     elements: [
-      zone('fb-b1', 160, 145, 160, 150, 'B1'),
-      zone('fb-b2', 320, 145, 160, 150, 'B2'),
-      zone('fb-b3', 480, 145, 160, 150, 'B3'),
-      zone('fb-b4', 640, 145, 160, 150, 'B4'),
+      zone('fb-b1', 160, 145, 155, 150, 'B1'),
+      zone('fb-b2', 315, 145, 155, 150, 'B2'),
+      zone('fb-b3', 470, 145, 155, 150, 'B3'),
+      zone('fb-b4', 625, 145, 155, 150, 'B4'),
+      zone('fb-b5', 780, 145, 155, 150, 'B5'),
       track('M40 220H920'),
-      boundary(160, 'S1'), boundary(320, 'S2'), boundary(480, 'S3'), boundary(640, 'S4'), boundary(800, 'S5'),
-      signal('fb-s1', 160, 220, 'S1'), signal('fb-s2', 320, 220, 'S2'), signal('fb-s3', 480, 220, 'S3'), signal('fb-s4', 640, 220, 'S4'),
+      boundary(160, 'S1'), boundary(315, 'S2'), boundary(470, 'S3'), boundary(625, 'S4'), boundary(780, 'S5'), boundary(935, '区间终点'),
+      signal('fb-s1', 160, 220, 'S1'), signal('fb-s2', 315, 220, 'S2'), signal('fb-s3', 470, 220, 'S3'), signal('fb-s4', 625, 220, 'S4'), signal('fb-s5', 780, 220, 'S5'),
       arrow('M70 185H145', 'cyan', '追踪方向', 105, 175),
-      label(360, 405, '固定分区 B1—B4 · 位置判定以区段为单位', { tone: 'neutral', size: 11 }),
+      label(360, 405, '固定分区 B1—B5 · 信号随整列车出清同步恢复', { tone: 'neutral', size: 11 }),
     ],
     routes: [{ id: 'fb-line', d: 'M-100 220H1060' }],
     trains: [
-      train('fb-a', 'fb-line', 'A 3001', 'cyan', [[0, 0], [1000, 0.15], [3500, 0.35], [6500, 0.58], [9500, 0.82], [12000, 1], [DURATION, 1]]),
-      train('fb-b', 'fb-line', 'B 3002', 'amber', [[0, 0], [2000, 0.05], [4500, 0.18], [7000, 0.34], [9500, 0.5], [12000, 0.66], [DURATION, 0.78]], { visible: [[1800, DURATION]] }),
+      train('fb-a', 'fb-line', 'A 3001', 'cyan', FB_A_FRAMES),
+      train('fb-b', 'fb-line', 'B 3002', 'amber', FB_B_FRAMES, { visible: [[1800, DURATION]] }),
     ],
     flows: [
-      flow('M80 195H150', [[0, 3500]], 'cyan'),
-      flow('M330 195H470', [[3500, 9500]], 'amber'),
-      flow('M650 195H790', [[9500, DURATION]], 'mint'),
+      flow('M80 195H150', [[0, 6200]], 'cyan'),
+      flow('M330 195H620', [[2500, 10500]], 'amber'),
+      flow('M790 195H900', [[8500, DURATION]], 'mint'),
     ],
     callouts: [
-      callout('fb-c1', '边界在建设时确定', 'FIXED SECTIONS', [[0, 1000]], 'mint', 250, 'M620 344L480 145'),
-      callout('fb-c2', 'B1 整体显示占用', 'WHOLE BLOCK OCCUPIED', [[1000, 3500]], 'rose', 275, 'M620 344L240 220'),
-      callout('fb-c3', '占用状态逐段传递', 'STEPWISE RELEASE', [[3500, 6500]], 'amber', 260, 'M620 344L400 220'),
-      callout('fb-c4', '后车按固定信号追踪', 'DISCRETE AUTHORITY', [[6500, 9500]], 'cyan', 275, 'M620 344L320 220'),
-      callout('fb-c5', '边界不动 · 间隔粒度较粗', 'FIXED RESOLUTION', [[9500, DURATION]], 'rose', 285, 'M620 344L640 220'),
+      callout('fb-c1', '五个分区边界固定', 'B1—B5 / DISCRETE SECTIONS', [[0, 2500]], 'mint', 280, 'M620 344L470 145'),
+      callout('fb-c2', 'A 车占用 B1 · S1 停车', 'FULL TRAIN OCCUPANCY', [[2500, 4500]], 'rose', 285, 'M620 344L240 220'),
+      callout('fb-c3', '车尾出清 · S1 同步恢复', 'RELEASE AT TAIL CLEARANCE', [[4500, 6200]], 'mint', 295, 'M620 344L315 220'),
+      callout('fb-c4', 'B 车获准进入 B1', 'SIGNAL MATCHES OCCUPANCY', [[6200, 8500]], 'cyan', 285, 'M620 344L200 220'),
+      callout('fb-c5', '后车保持固定分区防护', 'ONE BLOCK RESOLUTION', [[8500, 11000]], 'amber', 285, 'M620 344L560 220'),
+      callout('fb-c6', '边界不动 · 间隔粒度较粗', 'FIXED BOUNDARIES REMAIN', [[11000, DURATION]], 'rose', 285, 'M620 344L780 220'),
     ],
-    zones: [
-      zoneStates('fb-b1', 'B1', [
-        { time: 1000, state: 'occupied', text: 'B1 · A 车占用' },
-        { time: 3500, state: 'protected', text: 'B1 · 防护' },
-        { time: 4500, state: 'clear', text: 'B1 · 空闲' },
-        { time: 7000, state: 'occupied', text: 'B1 · B 车占用' },
-        { time: 9500, state: 'clear', text: 'B1 · 空闲' },
-      ]),
-      zoneStates('fb-b2', 'B2', [
-        { time: 3500, state: 'occupied', text: 'B2 · A 车占用' },
-        { time: 6500, state: 'clear', text: 'B2 · 空闲' },
-        { time: 9500, state: 'occupied', text: 'B2 · B 车占用' },
-      ]),
-      zoneStates('fb-b3', 'B3', [
-        { time: 6500, state: 'occupied', text: 'B3 · A 车占用' },
-        { time: 9500, state: 'clear', text: 'B3 · 空闲' },
-      ]),
-      zoneStates('fb-b4', 'B4', [
-        { time: 9500, state: 'occupied', text: 'B4 · A 车占用' },
-        { time: 12000, state: 'clear', text: 'B4 · 空闲' },
-      ]),
-    ],
-    signals: [
-      signalStates('fb-s1', [
-        { time: 1000, state: 'stop', text: 'S1 停车 · B1 占用' },
-        { time: 4500, state: 'caution', text: 'S1 注意' },
-        { time: 7000, state: 'stop', text: 'S1 停车 · B1 再占用' },
-      ]),
-      signalStates('fb-s2', [
-        { time: 3500, state: 'stop', text: 'S2 停车 · B2 占用' },
-        { time: 6500, state: 'clear', text: 'S2 开放' },
-      ]),
-      signalStates('fb-s3', [
-        { time: 6500, state: 'stop', text: 'S3 停车 · B3 占用' },
-        { time: 9500, state: 'clear', text: 'S3 开放' },
-      ]),
-    ],
+    zones: FB_TIMELINE.zoneStates,
+    signals: FB_TIMELINE.signalStates,
     dynamicText: [
-      { time: 0, text: '01 / 固定闭塞分区 B1—B4' },
-      { time: 1000, text: '02 / A 车占用 B1，信号降级' },
-      { time: 3500, text: '03 / 占用状态按分区逐段传递' },
-      { time: 6500, text: '04 / B 车保持整区段间隔' },
-      { time: 9500, text: '05 / 分区依次出清，但边界不动' },
-      { time: 12000, text: '06 / 追踪粒度受分区长度约束' },
+      { time: 0, text: '01 / 五个固定闭塞分区 B1—B5' },
+      { time: 2500, text: '02 / A 车进入 B1，S1 立即转停车' },
+      { time: 4500, text: '03 / A 车车尾出清，B1 与 S1 同步恢复' },
+      { time: 6200, text: '04 / B 车按当前信号显示进入 B1' },
+      { time: 8500, text: '05 / A 车占用后段，信号逐级降级' },
+      { time: 11000, text: '06 / 分区依次出清，边界始终固定' },
     ],
   }),
 };

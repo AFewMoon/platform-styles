@@ -1,7 +1,14 @@
 import { clampTime } from './animation-controller.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const STATE_CLASSES = ['is-clear', 'is-occupied', 'is-protected', 'is-active'];
+const STATE_CLASSES = [
+  'is-clear',
+  'is-caution',
+  'is-stop',
+  'is-occupied',
+  'is-protected',
+  'is-active',
+];
 let sceneCounter = 0;
 
 const clamp01 = (value) => Math.min(1, Math.max(0, value));
@@ -287,12 +294,28 @@ function buildStaticElement(element, zoneNodes, signalNodes) {
       break;
     }
     case 'switch': {
+      const switchTone = element.tone ?? 'mint';
+      if (element.linkD) {
+        group.appendChild(svgNode('path', {
+          d: element.linkD,
+          class: 'switch-link',
+          'data-tone': switchTone,
+        }));
+      }
+      if (element.highlight) {
+        group.appendChild(svgNode('circle', {
+          cx: element.x, cy: element.y, r: 8.5, class: 'switch-halo',
+          'data-tone': switchTone,
+        }));
+      }
       group.appendChild(svgNode('circle', {
         cx: element.x, cy: element.y, r: 4.5, class: 'switch-node',
+        'data-tone': switchTone,
       }));
       if (element.label) {
         group.appendChild(svgNode('text', {
           x: element.x + 8, y: element.y - 8, class: 'switch-label',
+          'data-tone': switchTone,
         }, element.label));
       }
       break;
@@ -497,6 +520,16 @@ function pointOnRoute(route, progress) {
   } catch {
     return null;
   }
+}
+
+export function isMoverInsideFrame({ x, y, angle = 0, halfWidth = 0, halfHeight = 0 }, bounds, padding = 0) {
+  const radians = angle * Math.PI / 180;
+  const extentX = Math.abs(Math.cos(radians)) * halfWidth + Math.abs(Math.sin(radians)) * halfHeight;
+  const extentY = Math.abs(Math.sin(radians)) * halfWidth + Math.abs(Math.cos(radians)) * halfHeight;
+  return x - extentX >= bounds.minX + padding
+    && x + extentX <= bounds.maxX - padding
+    && y - extentY >= bounds.minY + padding
+    && y + extentY <= bounds.maxY - padding;
 }
 
 export function createSvgScene(scenario) {
@@ -713,11 +746,19 @@ export function createSvgScene(scenario) {
   }
 
   function renderMovers(time) {
+    const frameBounds = {
+      minX,
+      minY,
+      maxX: minX + width,
+      maxY: minY + height,
+    };
     movers.forEach((entry) => {
-      const { config, node, route } = entry;
+      const { config, node, route, kind } = entry;
       const visible = Boolean(route) && isVisible(config.visible, time);
-      setDisplay(node, entry, visible);
-      if (!visible || !route) return;
+      if (!visible || !route) {
+        setDisplay(node, entry, false);
+        return;
+      }
       const progress = sampleFrames(config.keyframes ?? [[0, 0], [duration, 1]], time, config.easing ?? 'smooth');
       const point = pointOnRoute(route, progress);
       if (!point) {
@@ -726,6 +767,34 @@ export function createSvgScene(scenario) {
       }
       const angle = config.rotation === false ? 0 : point.angle + finiteNumber(config.angleOffset, 0);
       const scale = finiteNumber(config.scale, 1);
+      let halfWidth = finiteNumber(config.width, 0) / 2;
+      let halfHeight = finiteNumber(config.height, 0) / 2;
+      if (kind === 'passenger') {
+        halfWidth = finiteNumber(config.radius, 4.5) + 2;
+        halfHeight = 18;
+      } else if (kind === 'train') {
+        halfWidth = finiteNumber(config.width, finiteNumber(config.cars, 3) * 30 + 14) / 2;
+        halfHeight = finiteNumber(config.height, 22) / 2;
+      } else if (kind === 'wagon') {
+        halfWidth = finiteNumber(config.width, 34) / 2;
+        halfHeight = finiteNumber(config.height, 16) / 2;
+      }
+      const insideFrame = isMoverInsideFrame(
+        {
+          x: point.x,
+          y: point.y,
+          angle,
+          halfWidth: halfWidth * scale,
+          halfHeight: halfHeight * scale,
+        },
+        frameBounds,
+        12 + finiteNumber(config.edgePadding, 0),
+      );
+      if (!insideFrame) {
+        setDisplay(node, entry, false);
+        return;
+      }
+      setDisplay(node, entry, true);
       const transform = `translate(${round(point.x)} ${round(point.y)}) rotate(${round(angle)}) scale(${scale})`;
       setTransform(node, entry, transform);
       const opacity = config.opacity

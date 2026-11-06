@@ -42,7 +42,6 @@ export const REQUIRED_SCENARIO_IDS = {
   stations: [
     'station-side',
     'station-island',
-    'station-separated-island',
     'station-spanish',
   ],
   blocks: [
